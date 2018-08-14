@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    </head>
+    <body>
+        <script src="components.js"></script>
+        <script src="//unpkg.com/mithril/mithril.js"></script>
+        <script>
+        var root = document.body
+
+        var App = {
+            data: {
+                cards: 0
+            },
+            view: function(vnode) {
+                var cards = [];
+
+                for (var c = 0; c < vnode.state.data.cards;  c++) {
+                    cards.push(
+                        m(Card, {
+                            title: 'Card' + c,
+                            text: 'This is a Card',
+                            button:  m("a.btn.btn-primary[href='#']", "Go somewhere")
+                        })
+                    );
+                }
+
+                return m('.container', [
+                    m('.row', [
+                        m('.col', [
+                            m(Breadcrumb, { items: [
+                                { title: 'home', link: '#home'},
+                                { title: 'group1', link: '#group1'},
+                                { title: 'item4' }
+                            ] })
+                        ])
+                    ]),
+                    m('.row', [
+                        m('.col', [
+                            m(Header, { title: 'home' })
+                        ]),
+                        m('.col', [
+                            m(Counter, { onCountChange: function(count) {
+                                vnode.state.data.cards = count;
+                            } })
+                        ])
+                    ]),
+                    m('.row', [
+                        cards.map(function(card) {
+                            return m('.col', card);
+                        })
+                    ])
+                ])
+            }
+        };
+
+        m.mount(document.body, App);
+        </script>
+    </body>
+</html>
