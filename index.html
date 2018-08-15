@@ -27,32 +27,45 @@
                     );
                 }
 
-                return m('.container', [
-                    m('.row', [
-                        m('.col', [
-                            m(Breadcrumb, { items: [
-                                { title: 'home', link: '#home'},
-                                { title: 'group1', link: '#group1'},
-                                { title: 'item4' }
-                            ] })
+                return [
+                    m('.container', [
+                        m('.row', [
+                            m('.col', [
+                                m(Breadcrumb, { items: [
+                                    { title: 'home', link: '#home'},
+                                    { title: 'group1', link: '#group1'},
+                                    { title: 'item4' }
+                                ] })
+                            ])
                         ])
                     ]),
-                    m('.row', [
-                        m('.col', [
-                            m(Header, { title: 'home' })
+                    m('.container', [
+                        m('.row', [
+                            m('.col', [
+                                m(Breadcrumb, { items: [
+                                    { title: 'home', link: '#home'},
+                                    { title: 'group1', link: '#group1'},
+                                    { title: 'item4' }
+                                ] })
+                            ])
                         ]),
-                        m('.col', [
-                            m(Counter, { onCountChange: function(count) {
-                                vnode.state.data.cards = count;
-                            } })
+                        m('.row', [
+                            m('.col', [
+                                m(Header, { title: 'home' })
+                            ]),
+                            m('.col', [
+                                m(Counter, { onCountChange: function(count) {
+                                    vnode.state.data.cards = count;
+                                } })
+                            ])
+                        ]),
+                        m('.row', [
+                            cards.map(function(card) {
+                                return m('.col', card);
+                            })
                         ])
-                    ]),
-                    m('.row', [
-                        cards.map(function(card) {
-                            return m('.col', card);
-                        })
                     ])
-                ])
+                ];
             }
         };
 
