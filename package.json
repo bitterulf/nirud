@@ -1,0 +1,22 @@
+{
+  "name": "nirud",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bitterulf/nirud.git"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/bitterulf/nirud/issues"
+  },
+  "homepage": "https://github.com/bitterulf/nirud#readme",
+  "dependencies": {
+    "canvas-prebuilt": "^1.6.5-prerelease.1"
+  }
+}
