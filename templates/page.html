@@ -1,0 +1,26 @@
+<html>
+    <head>
+    </head>
+    <body>
+        <script src="//unpkg.com/mithril/mithril.js"></script>
+        <script>
+            handleReload = function() {
+                window.location.reload();
+            };
+
+            const data = {
+                title: '{{title}}',
+                count: '{{counter}}'
+            }
+
+            m.render(document.body, [
+                m('h1', data.title),
+                m('h2', data.count),
+                m('div', m('a', { href: 'page2.html' }, '2')),
+                m('button', { onclick: function() {
+                    window.parent.doAction({ action: 'countUp' });
+                }}, 'up')
+            ]);
+        </script>
+    </body>
+</html>

@@ -4,4 +4,4 @@
 /bower_components/
 /node_modules/
 /.npmrc
-/temp/
+/temp/*
