@@ -10,17 +10,26 @@
 
             const data = {
                 title: '{{title}}',
-                count: '{{counter}}'
+                count: '{{counter}}',
+                inverted: window.parent.getToggle('inverted')
             }
 
-            m.render(document.body, [
-                m('h1', data.title),
-                m('h2', data.count),
-                m('div', m('a', { href: 'page2.html' }, '2')),
-                m('button', { onclick: function() {
-                    window.parent.doAction({ action: 'countUp' });
-                }}, 'up')
-            ]);
+            m.mount(document.body, {
+                view: function() {
+                    return [
+                        m('h1', data.title),
+                        m('h2', data.count),
+                        m('div', m('a', { href: 'page2.html' }, '2')),
+                        m('button', { onclick: function() {
+                            window.parent.doAction({ action: 'countUp' });
+                        }}, 'up'),
+                        m('button', { onclick: function() {
+                            data.inverted = !data.inverted;
+                            window.parent.setToggle('inverted', data.inverted);
+                        } }, data.inverted ? 'X': 'O')
+                    ];
+                }
+            });
         </script>
     </body>
 </html>

@@ -20,7 +20,8 @@ server.connection({
 });
 
 const state = {
-    counter: 0
+    counter: 0,
+    messages: []
 };
 
 const primus = new Primus(server.listener, {/* options */});
@@ -29,8 +30,12 @@ primus.on('connection', function (spark) {
     spark.on('data', function(data) {
         if (data.action === 'countUp') {
             state.counter++;
+            state.messages.push({
+                text: 'message' + state.counter
+            });
             primus.forEach(function (spark, id, connections) {
                 spark.write({ reload: '/page.html' });
+                spark.write({ reload: '/messages.html' });
             });
         }
     });
@@ -81,6 +86,19 @@ server.route({
 
             return reply.view('page2', {
                 title: 'nirud page'
+            });
+        }
+    }
+});
+
+server.route({
+    method: 'GET',
+    path: '/messages.html',
+    config: {
+        handler: function (request, reply) {
+
+            return reply.view('messages', {
+                messages: state.messages
             });
         }
     }
