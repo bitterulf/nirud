@@ -1,7 +1,6 @@
-console.log(localStorage.getItem('images'));
-
 const state = {
-    images: []
+    images: [],
+    extractions: []
 };
 
 try {
@@ -9,6 +8,7 @@ try {
         image.id = image.imageUrl.split('/')[5].split('.')[0];
         return image;
     });
+    state.extractions = JSON.parse(localStorage.getItem('extractions')) || [];
 } catch (e) {
     console.log(e);
 }
@@ -87,23 +87,44 @@ var ImageView = {
             return image.id === id;
         });
 
-
+        console.log(image.imageUrl.split('staticflickr.com')[1]);
 
         const drawCenter = vnode.tag.centerX > -1 && vnode.tag.centerY > -1;
         const drawMarker = vnode.tag.left > -1 && vnode.tag.top > -1 && vnode.tag.right > -1 && vnode.tag.bottom > -1;
 
-        console.log('marker', drawMarker);
+        const extractions  = state.extractions.filter(function(extraction) {
+            return extraction.image === id;
+        });
 
         return m('div', [
             m('h1', {class: 'title', style: 'position: absolute;' }, 'ImageView'),
-            m('img', {
-                src: image.imageUrl
-            }),
+            m.fragment({
+                    oncreate: function(vnode) {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 1024;
+                        canvas.height = 1024;
+                        const ctx = canvas.getContext('2d');
+
+                        ctx.drawImage(vnode.dom, 10, 10);
+                        console.log(canvas.toDataURL());
+                    }
+                },
+                [
+                    m('img', {
+                        src: '/static' + image.imageUrl.split('staticflickr.com')[1]
+                    })
+                ]
+            ),
+            m('div', extractions.map(function(extraction) {
+                return m('div', {style: 'position: absolute; width: '+(extraction.right - extraction.left)+'px; height: '+(extraction.bottom - extraction.top)+'px; border: solid orange 1px; left: '+extraction.left+'px; top: '+extraction.top+'px;'});
+            })),
             drawCenter ? m('div', {style: 'position: absolute; width: 1px; height: 1px; border: solid blue 1px; left: '+vnode.tag.centerX+'px; top: '+vnode.tag.centerY+'px;'}) : null,
             drawMarker ? m('div', {style: 'position: absolute; width: '+(vnode.tag.right - vnode.tag.left)+'px; height: '+(vnode.tag.bottom - vnode.tag.top)+'px; border: solid red 1px; left: '+vnode.tag.left+'px; top: '+vnode.tag.top+'px;'}) : null,
             m('div', {
                 style: 'position: absolute; width: 100%; height: 100%; top: 0px; left: 0px;',
                 onclick: function(ev) {
+                    ev.x = ev.offsetX;
+                    ev.y = ev.offsetY;
                     console.log(ev.x, ev.y, ev.target.offsetWidth, ev.target.offsetHeight);
                     console.log(ev);
                     if (ev.shiftKey) {
@@ -137,6 +158,19 @@ var ImageView = {
                         centerX: vnode.tag.centerX,
                         centerY: vnode.tag.centerY
                     });
+
+                    state.extractions.push({
+                        image: id,
+                        left: vnode.tag.left,
+                        top: vnode.tag.top,
+                        right: vnode.tag.right,
+                        bottom: vnode.tag.bottom,
+                        centerX: vnode.tag.centerX,
+                        centerY: vnode.tag.centerY
+                    });
+
+                    localStorage.setItem('extractions', JSON.stringify(state.extractions));
+
                     vnode.tag.left = -1;
                     vnode.tag.top = -1;
                     vnode.tag.right = -1;
