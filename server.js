@@ -34,7 +34,7 @@ primus.on('connection', function (spark) {
                 text: 'message' + state.counter
             });
             primus.forEach(function (spark, id, connections) {
-                spark.write({ reload: '/page.html' });
+                spark.write({ reload: '/page1.html' });
                 spark.write({ reload: '/messages.html' });
             });
         }
@@ -66,11 +66,25 @@ server.route({
 
 server.route({
     method: 'GET',
-    path: '/page.html',
+    path: '/page1.html',
     config: {
         handler: function (request, reply) {
 
-            return reply.view('page', {
+            return reply.view('page1', {
+                title: 'nirud page',
+                counter: state.counter
+            });
+        }
+    }
+});
+
+server.route({
+    method: 'GET',
+    path: '/page1.json',
+    config: {
+        handler: function (request, reply) {
+
+            return reply({
                 title: 'nirud page',
                 counter: state.counter
             });
@@ -98,6 +112,7 @@ server.route({
         handler: function (request, reply) {
 
             return reply.view('messages', {
+                title: 'messages',
                 messages: state.messages
             });
         }

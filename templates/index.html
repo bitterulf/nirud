@@ -19,46 +19,11 @@
                 right: 0;
             }
         </style>
-        <script src="main.js"></script>
-        <script src="/primus/primus.js"></script>
-        <script>
-            const primus = Primus.connect();
-            primus.on('data', function(data) {
-                if (data.reload) {
-                    Array.prototype.forEach.call(document.getElementsByTagName('iframe'), function(iframe) {
-                        if (iframe.contentWindow.location.href.indexOf(data.reload) > -1) {
-                            if (iframe.contentWindow.handleReload) {
-                                iframe.contentWindow.handleReload();
-                            }
-                            else {
-                                iframe.contentWindow.location.reload();
-                            }
-                        }
-                    });
-                }
-            });
-
-            doAction = function(action) {
-                primus.write(action);
-            }
-
-            const toggles = {};
-
-            getToggle = function(toggle) {
-                if (toggles[toggle]) {
-                    return true;
-                }
-                return false;
-            }
-
-            setToggle = function(toggle, value) {
-                toggles[toggle] = !!value;
-            }
-        </script>
     </head>
     <body>
         <script></script>
-        <iframe id='content' src="page.html"></iframe>
+        <iframe id='content' src="page1.html"></iframe>
         <iframe id='messages' src="messages.html"></iframe>
+        <script data-main="js/app" src="https://requirejs.org/docs/release/2.3.6/minified/require.js"></script>
     </body>
 </html>
