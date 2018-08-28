@@ -4,6 +4,7 @@ const Handlebars = require('handlebars');
 const Inert = require('inert');
 const Path = require('path');
 const Primus = require('primus');
+const seneca = require('seneca')();
 
 const server = new Hapi.Server({
     connections: {
@@ -30,13 +31,13 @@ primus.on('connection', function (spark) {
     spark.on('data', function(data) {
         if (data.action === 'countUp') {
             state.counter++;
-            state.messages.push({
-                text: 'message' + state.counter
-            });
-            primus.forEach(function (spark, id, connections) {
-                spark.write({ reload: '/page1.html' });
-                spark.write({ reload: '/messages.html' });
-            });
+
+            seneca.act('data:messages,action:add', {message: 'message' + state.counter}, function (err, result) {
+                primus.forEach(function (spark, id, connections) {
+                    spark.write({ reload: '/page1.html' });
+                    spark.write({ reload: '/messages.html' });
+                });
+            })
         }
     });
 });
@@ -49,6 +50,59 @@ server.views({
     relativeTo: __dirname,
     path: 'templates',
     partialsPath: 'templates/partials'
+});
+
+seneca.add('path:page1,extension:html', (msg, reply) => {
+  reply(null, {
+      view: 'page1',
+      data: {
+        title: 'nirud page',
+        counter: state.counter
+      }
+  });
+});
+
+seneca.add('path:page1,extension:json', (msg, reply) => {
+  reply(null, {
+      data: {
+        title: 'nirud page',
+        counter: state.counter
+      }
+  });
+});
+
+seneca.add('data:messages,action:get', (msg, reply) => {
+  reply(null, {
+      messages: state.messages
+  });
+});
+
+seneca.add('data:messages,action:add', (msg, reply) => {
+    state.messages.push({
+        text: msg.message
+    });
+    reply(null, {});
+});
+
+seneca.add('path:messages,extension:html', (msg, reply) => {
+    seneca.act('data:messages,action:get', function (err, result) {
+        reply(null, {
+          view: 'messages',
+          data: {
+            title: 'messages',
+            messages: result.messages
+          }
+        });
+    })
+});
+
+seneca.add('path:page2,extension:html', (msg, reply) => {
+  reply(null, {
+      view: 'page2',
+      data: {
+        title: 'nirud page'
+      }
+  });
 });
 
 server.route({
@@ -66,55 +120,15 @@ server.route({
 
 server.route({
     method: 'GET',
-    path: '/page1.html',
+    path: '/{path}.{extension}',
     config: {
         handler: function (request, reply) {
-
-            return reply.view('page1', {
-                title: 'nirud page',
-                counter: state.counter
-            });
-        }
-    }
-});
-
-server.route({
-    method: 'GET',
-    path: '/page1.json',
-    config: {
-        handler: function (request, reply) {
-
-            return reply({
-                title: 'nirud page',
-                counter: state.counter
-            });
-        }
-    }
-});
-
-server.route({
-    method: 'GET',
-    path: '/page2.html',
-    config: {
-        handler: function (request, reply) {
-
-            return reply.view('page2', {
-                title: 'nirud page'
-            });
-        }
-    }
-});
-
-server.route({
-    method: 'GET',
-    path: '/messages.html',
-    config: {
-        handler: function (request, reply) {
-
-            return reply.view('messages', {
-                title: 'messages',
-                messages: state.messages
-            });
+            seneca.act({path: request.params.path, extension: request.params.extension}, function (err, result) {
+                if (!result.view) {
+                    return reply(result.data);
+                }
+                return reply.view(result.view, result.data);
+            })
         }
     }
 });
