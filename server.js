@@ -22,7 +22,13 @@ server.connection({
 
 const state = {
     counter: 0,
-    messages: []
+    messages: [],
+    users: [
+        {
+            username: 'bob',
+            password: 'king'
+        }
+    ]
 };
 
 const primus = new Primus(server.listener, {/* options */});
@@ -42,6 +48,12 @@ primus.on('connection', function (spark) {
 
 server.register(Vision);
 server.register(Inert);
+server.register({ register: require('yar'), options: {
+    cookieOptions: {
+        password: 'passwordmustbesomewhatlongerthanitis',   // Required
+        isSecure: false // Required if using http
+    }
+} });
 
 server.views({
     engines: { html: Handlebars },
@@ -72,6 +84,15 @@ seneca.add('path:page1,extension:json', (msg, reply) => {
       data: {
         title: 'nirud page',
         counter: state.counter
+      }
+  });
+});
+
+seneca.add('path:login,extension:html', (msg, reply) => {
+  reply(null, {
+      view: 'login',
+      data: {
+        title: 'login'
       }
   });
 });
@@ -124,6 +145,11 @@ server.route({
     path: '/',
     config: {
         handler: function (request, reply) {
+            const username = request.yar.get('username');
+            if (!username) {
+                return reply().redirect('/login.html');
+            }
+
             seneca.act({path: 'index', extension: 'html'}, function (err, result) {
                 if (!result.view) {
                     return reply(result.data);
@@ -145,6 +171,29 @@ server.route({
                 }
                 return reply.view(result.view, result.data);
             })
+        }
+    }
+});
+
+server.route({
+    method: 'POST',
+    path: '/login',
+    config: {
+        payload:{
+            output:'data',
+            parse:true,
+        },
+        handler: function (request, reply) {
+            const user = state.users.find(function(user) {
+                return user.username == request.payload.username && user.password == request.payload.password;
+            });
+
+            if (user) {
+                request.yar.set('username', user.username);
+                return reply().redirect('/');
+            }
+
+            return reply().redirect('/login.html');
         }
     }
 });
