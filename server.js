@@ -33,10 +33,8 @@ primus.on('connection', function (spark) {
             state.counter++;
 
             seneca.act('data:messages,action:add', {message: 'message' + state.counter}, function (err, result) {
-                primus.forEach(function (spark, id, connections) {
-                    spark.write({ reload: '/page1.html' });
-                    spark.write({ reload: '/messages.html' });
-                });
+                seneca.act('event:update', { url: '/page1.html' });
+                seneca.act('event:update', { url: '/messages.html' });
             })
         }
     });
@@ -50,6 +48,13 @@ server.views({
     relativeTo: __dirname,
     path: 'templates',
     partialsPath: 'templates/partials'
+});
+
+seneca.add('event:update,url:*', (msg, reply) => {
+    primus.forEach(function (spark, id, connections) {
+        spark.write({ reload: msg.url });
+    });
+    reply(null, {});
 });
 
 seneca.add('path:page1,extension:html', (msg, reply) => {
@@ -105,15 +110,26 @@ seneca.add('path:page2,extension:html', (msg, reply) => {
   });
 });
 
+seneca.add('path:index,extension:html', (msg, reply) => {
+  reply(null, {
+      view: 'index',
+      data: {
+        title: 'nirud server'
+      }
+  });
+});
+
 server.route({
     method: 'GET',
     path: '/',
     config: {
         handler: function (request, reply) {
-
-            return reply.view('index', {
-                title: 'nirud server'
-            });
+            seneca.act({path: 'index', extension: 'html'}, function (err, result) {
+                if (!result.view) {
+                    return reply(result.data);
+                }
+                return reply.view(result.view, result.data);
+            })
         }
     }
 });
