@@ -18,12 +18,21 @@
                 top: 0;
                 right: 0;
             }
+            #logout {
+                position: absolute;
+                top: 0;
+                right: 0;
+            }
         </style>
     </head>
     <body>
         <script></script>
         <iframe id='content' src="page1.html"></iframe>
         <iframe id='messages' src="messages.html"></iframe>
+        <a id='logout' href='/logout'>logout</a>
+        <script>
+            var session = '{{session}}';
+        </script>
         <script data-main="js/app" src="https://requirejs.org/docs/release/2.3.6/minified/require.js"></script>
     </body>
 </html>

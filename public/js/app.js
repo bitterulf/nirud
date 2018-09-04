@@ -6,8 +6,8 @@ requirejs.config({
 });
 
 requirejs(
-    ['/primus/primus.js'],
-    function(Primus) {
+    ['/primus/primus.js', 'session'],
+    function(Primus, session) {
         const primus = Primus.connect();
         primus.on('data', function(data) {
             if (data.reload) {
@@ -22,6 +22,11 @@ requirejs(
                     }
                 });
             }
+        });
+
+        primus.write({
+            action: 'auth',
+            session: session
         });
 
         window.doAction = function(action) {

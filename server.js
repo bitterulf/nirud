@@ -5,6 +5,7 @@ const Inert = require('inert');
 const Path = require('path');
 const Primus = require('primus');
 const seneca = require('seneca')();
+const Iron = require('iron');
 
 const server = new Hapi.Server({
     connections: {
@@ -31,17 +32,30 @@ const state = {
     ]
 };
 
+const sessionPassword = 'passwordmustbesomewhatlongerthanitis';
+
 const primus = new Primus(server.listener, {/* options */});
 
 primus.on('connection', function (spark) {
     spark.on('data', function(data) {
-        if (data.action === 'countUp') {
-            state.counter++;
+        if (data.action === 'auth') {
+            Iron
+                .unseal(data.session, sessionPassword, Iron.defaults)
+                .then(function(unsealed) {
+                    console.log(unsealed._store);
+                    spark.username = unsealed._store.username;
+                    spark.world = unsealed._store.world;
+                });
+        }
+        else if (spark.username && spark.world) {
+            if (data.action === 'countUp') {
+                state.counter++;
 
-            seneca.act('data:messages,action:add', {message: 'message' + state.counter}, function (err, result) {
-                this.act('event:update', { url: '/page1.html' });
-                this.act('event:update', { url: '/messages.html' });
-            })
+                seneca.act('data:messages,action:add', {username: spark.username, world: spark.world, message: 'message' + state.counter}, function (err, result) {
+                    this.act('event:update', { username: spark.username, world: spark.world, url: '/page1.html' });
+                    this.act('event:update', { username: spark.username, world: spark.world, url: '/messages.html' });
+                })
+            }
         }
     });
 });
@@ -50,7 +64,7 @@ server.register(Vision);
 server.register(Inert);
 server.register({ register: require('yar'), options: {
     cookieOptions: {
-        password: 'passwordmustbesomewhatlongerthanitis',   // Required
+        password: sessionPassword,   // Required
         isSecure: false // Required if using http
     }
 } });
@@ -62,7 +76,7 @@ server.views({
     partialsPath: 'templates/partials'
 });
 
-seneca.add('event:update,url:*', function (msg, reply) {
+seneca.add('event:update,url:*,username:*,world:*', function (msg, reply) {
     primus.forEach(function (spark, id, connections) {
         spark.write({ reload: msg.url });
     });
@@ -107,21 +121,25 @@ seneca.add('path:login,extension:html', function (msg, reply) {
   });
 });
 
-seneca.add('data:messages,action:get', function (msg, reply) {
+seneca.add('data:messages,action:get,username:*,world:*', function (msg, reply) {
   reply(null, {
-      messages: state.messages
+      messages: state.messages.filter(function(message) {
+          return message.username == msg.username && message.world == msg.world
+      })
   });
 });
 
-seneca.add('data:messages,action:add', function (msg, reply) {
+seneca.add('data:messages,action:add,world:*,username:*', function (msg, reply) {
     state.messages.push({
-        text: msg.message
+        text: msg.message,
+        username: msg.username,
+        world: msg.world
     });
     reply(null, {});
 });
 
-seneca.add('path:messages,extension:html', function (msg, reply) {
-    this.act('data:messages,action:get', function (err, result) {
+seneca.add('path:messages,extension:html,world:*,username:*', function (msg, reply) {
+    this.act('data:messages,action:get', { world: msg.world, username: msg.username }, function (err, result) {
         reply(null, {
           view: 'messages',
           data: {
@@ -141,11 +159,11 @@ seneca.add('path:page2,extension:html', function (msg, reply) {
   });
 });
 
-seneca.add('path:index,extension:html', function (msg, reply) {
+seneca.add('path:index,extension:html,session:*', function (msg, reply) {
   reply(null, {
       view: 'index',
       data: {
-        title: 'nirud server'
+        session: msg.session
       }
   });
 });
@@ -165,12 +183,21 @@ server.route({
     path: '/',
     config: {
         handler: function (request, reply) {
+            const session = request
+                .headers
+                .cookie
+                .split('; ')
+                .find(function(cookie) {
+                    return cookie.indexOf('session=') == 0;
+                });
+
             const username = request.yar.get('username');
-            if (!username) {
+            const world = request.yar.get('world')
+            if (!username || !world || !session) {
                 return reply().redirect('/login.html');
             }
 
-            seneca.act({path: 'index', extension: 'html'}, function (err, result) {
+            seneca.act({path: 'index', extension: 'html', session: session.replace('session=', '')}, function (err, result) {
                 if (!result.view) {
                     return reply(result.data);
                 }
@@ -217,10 +244,12 @@ server.route({
             const user = state.users.find(function(user) {
                 return user.username == request.payload.username && user.password == request.payload.password;
             });
+            const world = request.payload.world;
 
-            if (user) {
+            if (user && world) {
                 request.yar.set('username', user.username);
-                request.yar.set('world', 'w1');
+                console.log(world);
+                request.yar.set('world', world);
                 return reply().redirect('/');
             }
 
