@@ -53,7 +53,14 @@ primus.on('connection', function (spark) {
 
                 seneca.act('data:messages,action:add', {username: spark.username, world: spark.world, message: 'message' + state.counter}, function (err, result) {
                     this.act('event:update', { username: spark.username, world: spark.world, url: '/page1.html' });
-                    this.act('event:update', { username: spark.username, world: spark.world, url: '/messages.html' });
+                })
+            }
+            else if (data.action === 'sendMessage' && data.message) {
+                seneca.act('data:messages,action:add', {username: spark.username, world: spark.world, message: data.message}, function (err, result) {
+                })
+            }
+            else if (data.action === 'construct' && data.construction) {
+                seneca.act('data:messages,action:add', {username: spark.username, world: spark.world, message: spark.username + ' want to construct ' + data.construction }, function (err, result) {
                 })
             }
         }
@@ -112,6 +119,26 @@ seneca.add('path:page1,extension:json,world:*,username:*', function (msg, reply)
   });
 });
 
+seneca.add('path:constructions,extension:html,world:*,username:*', function (msg, reply) {
+  reply(null, {
+      view: 'constructions',
+      data: {
+        title: 'constructions'
+      }
+  });
+});
+
+seneca.add('path:constructions,extension:json,world:*,username:*', function (msg, reply) {
+  reply(null, {
+      data: {
+        options: [
+            { name: 'well', price: 10, time: 20 }
+        ],
+        constructions: []
+      }
+  });
+});
+
 seneca.add('path:login,extension:html', function (msg, reply) {
   reply(null, {
       view: 'login',
@@ -135,7 +162,10 @@ seneca.add('data:messages,action:add,world:*,username:*', function (msg, reply) 
         username: msg.username,
         world: msg.world
     });
-    reply(null, {});
+
+    this.act('event:update', { username: msg.username, world: msg.world, url: '/messages.html' }, function (err, result) {
+        reply(null, {});
+    });
 });
 
 seneca.add('path:messages,extension:html,world:*,username:*', function (msg, reply) {
@@ -143,9 +173,17 @@ seneca.add('path:messages,extension:html,world:*,username:*', function (msg, rep
         reply(null, {
           view: 'messages',
           data: {
-            title: 'messages',
-            messages: result.messages
           }
+        });
+    })
+});
+
+seneca.add('path:messages,extension:json,world:*,username:*', function (msg, reply) {
+    this.act('data:messages,action:get', { world: msg.world, username: msg.username }, function (err, result) {
+        reply(null, {
+            data: {
+                messages: result.messages
+            }
         });
     })
 });
