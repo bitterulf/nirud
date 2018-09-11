@@ -6,8 +6,6 @@ const Path = require('path');
 const Primus = require('primus');
 const seneca = require('seneca')();
 const Iron = require('iron');
-const _ = require('highland');
-const jsondiffpatch = require('jsondiffpatch');
 
 const server = new Hapi.Server({
     connections: {
@@ -38,50 +36,16 @@ const sessionPassword = 'passwordmustbesomewhatlongerthanitis';
 
 const primus = new Primus(server.listener, {/* options */});
 
-const stream = _();
-
 const serverState = {
     state: {}
 };
 
-stream.map(function(event, cb) {
-    return event
-})
-.scan({ messages: [] }, function(state, action) {
-    if (action.type == 'message' && action.username && action.text) {
-        state.messages.push({
-            text: action.text,
-            username: action.username,
-            world: action.world
-        });
-        if (state.messages.length > 3) {
-            state.messages.shift();
-        }
-    }
-
-    return state;
-})
-.scan({oldState: null, newState: null, diff: null}, function(state, newState) {
-    state.oldState = state.newState;
-    state.newState = JSON.parse(JSON.stringify(newState));
-    state.diff = jsondiffpatch.diff(state.oldState, state.newState);
-
-    return state;
-})
-.filter(function(change) {
-    return change.diff;
-})
-.each(function(change) {
-    serverState.state = change.newState;
-
-    if (change.diff.messages) {
-        primus.forEach(function (spark, id, connections) {
-            spark.write({ reload:'/messages.html' });
-        });
-    }
+seneca.add('server:state', function (msg, reply) {
+    serverState.state = msg.state;
+    reply(null, {});
 });
 
-stream.resume();
+seneca.use( require('./serverPlugin.js'), { });
 
 primus.on('connection', function (spark) {
     spark.on('data', function(data) {
@@ -103,7 +67,8 @@ primus.on('connection', function (spark) {
                 })
             }
             else if (data.action === 'sendMessage' && data.message) {
-                stream.write({ type: 'message', world: spark.world, username: spark.username, text: data.message });
+                seneca.act('stream:w1', { type: 'message', world: spark.world, username: spark.username, text: data.message }, function (err, result) {
+                })
             }
             else if (data.action === 'construct' && data.construction) {
                 seneca.act('data:messages,action:add', {username: spark.username, world: spark.world, message: spark.username + ' want to construct ' + data.construction }, function (err, result) {
@@ -129,7 +94,7 @@ server.views({
     partialsPath: 'templates/partials'
 });
 
-seneca.add('event:update,url:*,username:*,world:*', function (msg, reply) {
+seneca.add('event:update,url:*', function (msg, reply) {
     primus.forEach(function (spark, id, connections) {
         spark.write({ reload: msg.url });
     });
