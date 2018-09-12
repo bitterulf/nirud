@@ -2,9 +2,8 @@ const Hapi = require('hapi');
 const Vision = require('vision');
 const Inert = require('inert');
 const Path = require('path');
-const Primus = require('primus');
-const seneca = require('seneca')();
-const Iron = require('iron');
+
+const sessionPassword = 'passwordmustbesomewhatlongerthanitis';
 
 const server = new Hapi.Server({
     connections: {
@@ -20,49 +19,9 @@ server.connection({
     port: 8080,
 });
 
-const sessionPassword = 'passwordmustbesomewhatlongerthanitis';
-
-const primus = new Primus(server.listener, {/* options */});
-
-const serverState = {
-    state: {}
-};
-
-seneca.add('role:store,cmd:setSharedState', function (msg, reply) {
-    serverState.state = msg.state;
-    reply(null, {});
-});
-
-seneca.add('role:store,cmd:getSharedState', function (msg, reply) {
-    reply(null, {
-        state: serverState.state
-    });
-});
-
-seneca.use( require('./plugins/seneca/webPlugin.js'), { });
-seneca.use( require('./plugins/seneca/serverPlugin.js'), { });
-
-primus.on('connection', function (spark) {
-    spark.on('data', function(data) {
-        if (data.action === 'auth') {
-            Iron
-                .unseal(data.session, sessionPassword, Iron.defaults)
-                .then(function(unsealed) {
-                    console.log(unsealed._store);
-                    spark.username = unsealed._store.username;
-                    spark.world = unsealed._store.world;
-                });
-        }
-        else if (spark.username && spark.world) {
-            if (data.action === 'sendMessage' && data.message) {
-                seneca.act('role:stream,cmd:addEvent', { type: 'message', world: spark.world, username: spark.username, text: data.message }, function (err, result) {
-                })
-            }
-        }
-    });
-});
-
 server.register([
+    require('./plugins/hapi/senecaPlugin.js'),
+    { register: require('./plugins/hapi/primusPlugin.js'), options: { sessionPassword: sessionPassword } },
     Vision,
     Inert,
     {
@@ -74,15 +33,8 @@ server.register([
             }
         }
     },
-    { register: require('./plugins/hapi/hapiWebPlugin.js'), options: { seneca: seneca } }
+    { register: require('./plugins/hapi/hapiWebPlugin.js'), options: { } }
 ]);
-
-seneca.add('role:reloader,cmd:updateURL,url:*', function (msg, reply) {
-    primus.forEach(function (spark, id, connections) {
-        spark.write({ reload: msg.url });
-    });
-    reply(null, {});
-});
 
 server.start( (err) => {
 

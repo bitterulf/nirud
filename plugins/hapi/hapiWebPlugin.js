@@ -9,7 +9,7 @@ const users = [
 ];
 
 exports.register = (server, options, next) => {
-    const seneca = options.seneca;
+    const seneca = server.seneca;
 
     server.views({
         engines: { html: Handlebars },
