@@ -39,8 +39,8 @@ seneca.add('role:store,cmd:getSharedState', function (msg, reply) {
     });
 });
 
-seneca.use( require('./webPlugin.js'), { });
-seneca.use( require('./serverPlugin.js'), { });
+seneca.use( require('./plugins/seneca/webPlugin.js'), { });
+seneca.use( require('./plugins/seneca/serverPlugin.js'), { });
 
 primus.on('connection', function (spark) {
     spark.on('data', function(data) {
@@ -74,7 +74,7 @@ server.register([
             }
         }
     },
-    { register: require('./hapiWebPlugin'), options: { seneca: seneca } }
+    { register: require('./plugins/hapi/hapiWebPlugin.js'), options: { seneca: seneca } }
 ]);
 
 seneca.add('role:reloader,cmd:updateURL,url:*', function (msg, reply) {

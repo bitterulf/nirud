@@ -1,4 +1,5 @@
 const Handlebars = require('handlebars');
+const Path = require('path');
 
 const users = [
     {
@@ -12,7 +13,7 @@ exports.register = (server, options, next) => {
 
     server.views({
         engines: { html: Handlebars },
-        relativeTo: __dirname,
+        relativeTo: Path.resolve(__dirname, '../../'),
         path: 'templates',
         partialsPath: 'templates/partials'
     });
