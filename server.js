@@ -1,6 +1,5 @@
 const Hapi = require('hapi');
 const Vision = require('vision');
-const Handlebars = require('handlebars');
 const Inert = require('inert');
 const Path = require('path');
 const Primus = require('primus');
@@ -21,17 +20,6 @@ server.connection({
     port: 8080,
 });
 
-const state = {
-    counter: 0,
-    messages: [],
-    users: [
-        {
-            username: 'bob',
-            password: 'king'
-        }
-    ]
-};
-
 const sessionPassword = 'passwordmustbesomewhatlongerthanitis';
 
 const primus = new Primus(server.listener, {/* options */});
@@ -40,11 +28,18 @@ const serverState = {
     state: {}
 };
 
-seneca.add('server:state', function (msg, reply) {
+seneca.add('role:store,cmd:setSharedState', function (msg, reply) {
     serverState.state = msg.state;
     reply(null, {});
 });
 
+seneca.add('role:store,cmd:getSharedState', function (msg, reply) {
+    reply(null, {
+        state: serverState.state
+    });
+});
+
+seneca.use( require('./webPlugin.js'), { });
 seneca.use( require('./serverPlugin.js'), { });
 
 primus.on('connection', function (spark) {
@@ -59,252 +54,34 @@ primus.on('connection', function (spark) {
                 });
         }
         else if (spark.username && spark.world) {
-            if (data.action === 'countUp') {
-                state.counter++;
-
-                seneca.act('data:messages,action:add', {username: spark.username, world: spark.world, message: 'message' + state.counter}, function (err, result) {
-                    this.act('event:update', { username: spark.username, world: spark.world, url: '/page1.html' });
-                })
-            }
-            else if (data.action === 'sendMessage' && data.message) {
-                seneca.act('stream:w1', { type: 'message', world: spark.world, username: spark.username, text: data.message }, function (err, result) {
-                })
-            }
-            else if (data.action === 'construct' && data.construction) {
-                seneca.act('data:messages,action:add', {username: spark.username, world: spark.world, message: spark.username + ' want to construct ' + data.construction }, function (err, result) {
+            if (data.action === 'sendMessage' && data.message) {
+                seneca.act('role:stream,cmd:addEvent', { type: 'message', world: spark.world, username: spark.username, text: data.message }, function (err, result) {
                 })
             }
         }
     });
 });
 
-server.register(Vision);
-server.register(Inert);
-server.register({ register: require('yar'), options: {
-    cookieOptions: {
-        password: sessionPassword,   // Required
-        isSecure: false // Required if using http
-    }
-} });
+server.register([
+    Vision,
+    Inert,
+    {
+        register: require('yar'),
+        options: {
+            cookieOptions: {
+                password: sessionPassword,   // Required
+                isSecure: false // Required if using http
+            }
+        }
+    },
+    { register: require('./hapiWebPlugin'), options: { seneca: seneca } }
+]);
 
-server.views({
-    engines: { html: Handlebars },
-    relativeTo: __dirname,
-    path: 'templates',
-    partialsPath: 'templates/partials'
-});
-
-seneca.add('event:update,url:*', function (msg, reply) {
+seneca.add('role:reloader,cmd:updateURL,url:*', function (msg, reply) {
     primus.forEach(function (spark, id, connections) {
         spark.write({ reload: msg.url });
     });
     reply(null, {});
-});
-
-seneca.add('path:*,extension:html', function (msg, reply) {
-  reply(null, {
-      view: '404',
-      data: {
-        title: 'nirud page',
-      }
-  });
-});
-
-seneca.add('path:page1,extension:html,world:*,username:*', function (msg, reply) {
-  reply(null, {
-      view: 'page1',
-      data: {
-        title: 'nirud page'
-      }
-  });
-});
-
-seneca.add('path:page1,extension:json,world:*,username:*', function (msg, reply) {
-  reply(null, {
-      data: {
-        title: 'nirud page',
-        counter: state.counter,
-        username: msg.username,
-        world: msg.world
-      }
-  });
-});
-
-seneca.add('path:constructions,extension:html,world:*,username:*', function (msg, reply) {
-  reply(null, {
-      view: 'constructions',
-      data: {
-        title: 'constructions'
-      }
-  });
-});
-
-seneca.add('path:constructions,extension:json,world:*,username:*', function (msg, reply) {
-  reply(null, {
-      data: {
-        options: [
-            { name: 'well', price: 10, time: 20 }
-        ],
-        constructions: []
-      }
-  });
-});
-
-seneca.add('path:login,extension:html', function (msg, reply) {
-  reply(null, {
-      view: 'login',
-      data: {
-        title: 'login'
-      }
-  });
-});
-
-seneca.add('path:messages,extension:html,world:*,username:*', function (msg, reply) {
-    reply(null, {
-      view: 'messages',
-      data: {
-      }
-    });
-});
-
-seneca.add('path:messages,extension:json,world:*,username:*', function (msg, reply) {
-    reply(null, {
-        data: {
-            messages: serverState.state.messages || []
-        }
-    });
-});
-
-seneca.add('path:page2,extension:html', function (msg, reply) {
-  reply(null, {
-      view: 'page2',
-      data: {
-        title: 'nirud page'
-      }
-  });
-});
-
-seneca.add('path:index,extension:html,session:*', function (msg, reply) {
-  reply(null, {
-      view: 'index',
-      data: {
-        session: msg.session
-      }
-  });
-});
-
-seneca.add('path:unreleased,extension:html', function (msg, reply) {
-    console.log('not yet ready');
-    this.prior(msg, reply)
-});
-
-seneca.wrap('path:*', function (msg, respond) {
-    console.log('loading ' + msg.path + ' as '+ msg.extension);
-    this.prior(msg, respond)
-});
-
-server.route({
-    method: 'GET',
-    path: '/',
-    config: {
-        handler: function (request, reply) {
-            const session = request
-                .headers
-                .cookie
-                .split('; ')
-                .find(function(cookie) {
-                    return cookie.indexOf('session=') == 0;
-                });
-
-            const username = request.yar.get('username');
-            const world = request.yar.get('world')
-            if (!username || !world || !session) {
-                return reply().redirect('/login.html');
-            }
-
-            seneca.act({path: 'index', extension: 'html', session: session.replace('session=', '')}, function (err, result) {
-                if (!result.view) {
-                    return reply(result.data);
-                }
-                return reply.view(result.view, result.data);
-            })
-        }
-    }
-});
-
-server.route({
-    method: 'GET',
-    path: '/{path}.{extension}',
-    config: {
-        handler: function (request, reply) {
-            const username = request.yar.get('username');
-            const world = request.yar.get('world');
-
-            if ((!username || !world) && request.params.path != 'login') {
-                if (request.params.extension == 'json') {
-                    return reply({});
-                }
-                return reply('');
-            }
-
-            seneca.act({path: request.params.path, extension: request.params.extension, username: username, world: world}, function (err, result) {
-                if (!result.view) {
-                    return reply(result.data);
-                }
-                return reply.view(result.view, result.data);
-            })
-        }
-    }
-});
-
-server.route({
-    method: 'POST',
-    path: '/login',
-    config: {
-        payload:{
-            output:'data',
-            parse:true,
-        },
-        handler: function (request, reply) {
-            const user = state.users.find(function(user) {
-                return user.username == request.payload.username && user.password == request.payload.password;
-            });
-            const world = request.payload.world;
-
-            if (user && world) {
-                request.yar.set('username', user.username);
-                console.log(world);
-                request.yar.set('world', world);
-                return reply().redirect('/');
-            }
-
-            return reply().redirect('/login.html');
-        }
-    }
-});
-
-server.route({
-    method: 'GET',
-    path: '/logout',
-    config: {
-        handler: function (request, reply) {
-            request.yar.clear('username');
-
-            return reply().redirect('/login.html');
-        }
-    }
-});
-
-server.route({
-    method: 'GET',
-    path: '/{param*}',
-    handler: {
-        directory: {
-            path: '.',
-            redirectToSlash: true,
-            index: true,
-        }
-    }
 });
 
 server.start( (err) => {

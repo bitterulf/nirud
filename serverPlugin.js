@@ -35,18 +35,16 @@ module.exports = function( options ) {
         return change.diff;
     })
     .each(function(change) {
-        seneca.act('server:state', {
+        seneca.act('role:store,cmd:setSharedState', {
             state: change.newState
         });
 
         if (change.diff.messages) {
-            seneca.act('event:update', { url: '/messages.html' });
+            seneca.act('role:reloader,cmd:updateURL', { url: '/messages.html' });
         }
     });
 
-    stream.resume();
-
-    seneca.add('stream:*', function (msg, reply) {
+    seneca.add('role:stream,cmd:addEvent', function (msg, reply) {
         stream.write(msg);
         reply(null, {});
     });
