@@ -3,7 +3,7 @@ exports.register = (server, options, next) => {
 
     seneca.use( require('../seneca/statePlugin.js'), { });
     seneca.use( require('../seneca/webPlugin.js'), { });
-    seneca.use( require('../seneca/serverPlugin.js'), { });
+    seneca.use( require('../seneca/streamPlugin.js'), { world: 'w1' });
 
     server.decorate('server', 'seneca', seneca);
 

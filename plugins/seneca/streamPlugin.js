@@ -2,6 +2,7 @@ const jsondiffpatch = require('jsondiffpatch');
 const _ = require('highland');
 
 module.exports = function( options ) {
+    console.log('trick', options.world);
     const stream = _();
 
     const seneca = this;
@@ -44,7 +45,7 @@ module.exports = function( options ) {
         }
     });
 
-    seneca.add('role:stream,cmd:addEvent', function (msg, reply) {
+    seneca.add('role:stream,cmd:addEvent', { world: options.world }, function (msg, reply) {
         stream.write(msg);
         reply(null, {});
     });

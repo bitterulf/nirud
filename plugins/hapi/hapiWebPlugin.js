@@ -1,5 +1,6 @@
 const Handlebars = require('handlebars');
 const Path = require('path');
+const Canvas = require('canvas-prebuilt');
 
 const users = [
     {
@@ -16,6 +17,23 @@ exports.register = (server, options, next) => {
         relativeTo: Path.resolve(__dirname, '../../'),
         path: 'templates',
         partialsPath: 'templates/partials'
+    });
+
+    server.route({
+        method: 'GET',
+        path: '/metric.png',
+        config: {
+            handler: function (request, reply) {
+                const canvas = new Canvas(256, 256);
+                const ctx = canvas.getContext('2d');
+                ctx.font = '10px Impact';
+                ctx.fillText('abc', 128, 128);
+                ctx.fillStyle = 'rgba(0,180,180,0.5)';
+                ctx.fillRect(0,0,256,16);
+
+                reply(canvas.toBuffer()).type('image/png');
+            }
+        }
     });
 
     server.route({

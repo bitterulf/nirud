@@ -28,7 +28,7 @@ requirejs(['m', 'window', 'location', 'Menu'],
 
         reloadData();
 
-        m.mount(document.body, {
+        m.mount(document.getElementById('root'), {
             view: function() {
                 return [
                     m(Menu),
