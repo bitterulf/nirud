@@ -21,6 +21,18 @@ exports.register = (server, options, next) => {
                     seneca.act('role:stream,cmd:addEvent', { type: 'message', world: spark.world, username: spark.username, text: data.message }, function (err, result) {
                     })
                 }
+                else if (data.action === 'addMoney' && data.amount) {
+                    seneca.act('role:stream,cmd:addEvent', { type: 'addMoney', world: spark.world, username: spark.username, amount: data.amount }, function (err, result) {
+                    })
+                }
+                else if (data.action === 'timeTick') {
+                    seneca.act('role:stream,cmd:addEvent', { type: 'timeTick', world: spark.world, username: spark.username }, function (err, result) {
+                    })
+                }
+                else if (data.action === 'addPlot') {
+                    seneca.act('role:stream,cmd:addEvent', { type: 'addPlot', world: spark.world, username: spark.username }, function (err, result) {
+                    })
+                }
             }
         });
     });

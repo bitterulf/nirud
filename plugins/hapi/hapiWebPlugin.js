@@ -106,7 +106,6 @@ exports.register = (server, options, next) => {
 
                 if (user && world) {
                     request.yar.set('username', user.username);
-                    console.log(world);
                     request.yar.set('world', world);
                     return reply().redirect('/');
                 }

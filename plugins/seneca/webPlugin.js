@@ -78,6 +78,24 @@ module.exports = function( options ) {
         });
     });
 
+    seneca.add('role:web,cmd:respond,path:test,extension:html,world:*,username:*', function (msg, reply) {
+        reply(null, {
+          view: 'test',
+          data: {
+          }
+        });
+    });
+
+    seneca.add('role:web,cmd:respond,path:test,extension:json,world:*,username:*', function (msg, reply) {
+        this.act('role:store,cmd:getSharedState', function(err, result) {
+            reply(null, {
+                data: {
+                    state: result.state
+                }
+            });
+        });
+    });
+
     seneca.add('role:web,cmd:respond,path:page2,extension:html', function (msg, reply) {
       reply(null, {
           view: 'page2',

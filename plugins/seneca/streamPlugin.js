@@ -1,8 +1,10 @@
 const jsondiffpatch = require('jsondiffpatch');
 const _ = require('highland');
+const Datastore = require('nedb');
 
 module.exports = function( options ) {
-    console.log('trick', options.world);
+    const db = new Datastore({ filename: 'data/worlds/'+options.world, autoload: true });
+
     const stream = _();
 
     const seneca = this;
@@ -11,18 +13,50 @@ module.exports = function( options ) {
     .map(function(event, cb) {
         return event
     })
-    .scan({ messages: [] }, function(state, action) {
+    .scan({ messages: [], users: {}, time: 0, plots: [] }, function(state, action) {
         if (action.type == 'message' && action.username && action.text) {
             state.messages.push({
                 text: action.text,
                 username: action.username,
                 world: action.world
             });
-            if (state.messages.length > 3) {
-                state.messages.shift();
+        }
+        else if (action.type == 'addMoney' && action.username && action.amount && action.amount > 0) {
+            if (!state.users[action.username]) {
+                state.users[action.username] = {};
             }
+
+            if (!state.users[action.username].money) {
+                state.users[action.username].money = 0;
+            }
+
+            state.users[action.username].money += action.amount;
+        }
+        else if (action.type == 'timeTick') {
+            state.time++;
+            state.messages.push({
+                text: '[TIME] ' + state.time,
+                username: 'SYSTEM',
+                world: action.world
+            });
+        }
+        else if (action.type == 'addPlot') {
+            const id = state.plots.length + 1;
+            const y = Math.floor(id / 8);
+            const x = id - 8 * y;
+            state.plots.push({
+                id: id,
+                x: x,
+                y: y
+            });
         }
 
+        return state;
+    })
+    .map(function(state) {
+        if (state.messages.length > 10) {
+            state.messages = state.messages.slice(-10);
+        }
         return state;
     })
     .scan({oldState: null, newState: null, diff: null}, function(state, newState) {
@@ -43,10 +77,21 @@ module.exports = function( options ) {
         if (change.diff.messages) {
             seneca.act('role:reloader,cmd:updateURL', { url: '/messages.html' });
         }
+
+        seneca.act('role:reloader,cmd:updateURL', { url: '/test.html' });
+    });
+
+    db.find({}).sort({ timestamp: 1 }).exec(function (err, docs) {
+        docs.forEach(function(doc) {
+            stream.write(doc);
+        });
     });
 
     seneca.add('role:stream,cmd:addEvent', { world: options.world }, function (msg, reply) {
+        msg.timestamp = (new Date()).getTime();
         stream.write(msg);
         reply(null, {});
+        db.insert(msg, function (err, newDoc) {
+        });
     });
 }
