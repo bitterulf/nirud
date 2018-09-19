@@ -11,7 +11,6 @@ exports.register = (server, options, next) => {
                 Iron
                     .unseal(data.session, options.sessionPassword, Iron.defaults)
                     .then(function(unsealed) {
-                        console.log(unsealed._store);
                         spark.username = unsealed._store.username;
                         spark.world = unsealed._store.world;
                     });

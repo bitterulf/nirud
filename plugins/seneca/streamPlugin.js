@@ -41,11 +41,11 @@ module.exports = function( options ) {
             });
         }
         else if (action.type == 'addPlot') {
-            const id = state.plots.length + 1;
-            const y = Math.floor(id / 8);
-            const x = id - 8 * y;
+            const index = state.plots.length;
+            const y = Math.floor(index / 8);
+            const x = index - 8 * y;
             state.plots.push({
-                id: id,
+                id: index + 1,
                 x: x,
                 y: y
             });
@@ -76,6 +76,10 @@ module.exports = function( options ) {
 
         if (change.diff.messages) {
             seneca.act('role:reloader,cmd:updateURL', { url: '/messages.html' });
+        }
+
+        if (change.diff.plots) {
+            seneca.act('role:reloader,cmd:updateURL', { url: '/plots.html' });
         }
 
         seneca.act('role:reloader,cmd:updateURL', { url: '/test.html' });

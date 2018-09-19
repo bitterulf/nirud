@@ -69,10 +69,29 @@ module.exports = function( options ) {
 
     seneca.add('role:web,cmd:respond,path:messages,extension:json,world:*,username:*', function (msg, reply) {
         this.act('role:store,cmd:getSharedState', function(err, result) {
-            console.log(err, result);
             reply(null, {
                 data: {
                     messages: result.state.messages
+                }
+            });
+        });
+    });
+
+    seneca.add('role:web,cmd:respond,path:plots,extension:html,world:*,username:*', function (msg, reply) {
+        reply(null, {
+          view: 'plots',
+          data: {
+              title: 'plots'
+          }
+        });
+    });
+
+    seneca.add('role:web,cmd:respond,path:plots,extension:json,world:*,username:*', function (msg, reply) {
+        this.act('role:store,cmd:getSharedState', function(err, result) {
+            reply(null, {
+                data: {
+                    title: 'plots',
+                    plots: result.state.plots
                 }
             });
         });
