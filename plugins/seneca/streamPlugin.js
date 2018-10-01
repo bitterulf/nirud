@@ -50,6 +50,14 @@ module.exports = function( options ) {
                 y: y
             });
         }
+        else if (action.type == 'changePlotOwner') {
+            state.plots = state.plots.map(function(plot) {
+                if (plot.x == action.x && plot.y == action.y) {
+                    plot.owner = action.username;
+                }
+                return plot;
+            })
+        }
 
         return state;
     })

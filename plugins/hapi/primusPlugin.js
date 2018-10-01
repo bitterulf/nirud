@@ -32,6 +32,10 @@ exports.register = (server, options, next) => {
                     seneca.act('role:stream,cmd:addEvent', { type: 'addPlot', world: spark.world, username: spark.username }, function (err, result) {
                     })
                 }
+                else if (data.action === 'buyPlot') {
+                    seneca.act('role:stream,cmd:addEvent', { type: 'changePlotOwner', x: data.x, y: data.y, world: spark.world, username: spark.username }, function (err, result) {
+                    })
+                }
             }
         });
     });
