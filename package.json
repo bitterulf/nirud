@@ -36,8 +36,13 @@
     "yar": "^8.0.0"
   },
   "devDependencies": {
+    "gm": "^1.23.1",
     "gulp": "^3.9.1",
     "gulp-clean": "^0.4.0",
+    "gulp-raster": "^0.2.0",
+    "gulp-rename": "^1.4.0",
+    "gulp-shell": "^0.6.5",
+    "node-dir": "^0.1.17",
     "vinyl": "^2.2.0"
   }
 }
