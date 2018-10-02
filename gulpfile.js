@@ -7,6 +7,7 @@ const rename = require('gulp-rename');
 const shell = require('gulp-shell');
 const dir = require('node-dir');
 const gm = require('gm');
+const jimp = require('gulp-jimp');
 
 function generate(base, files) {
     const src = require('stream')
@@ -42,6 +43,21 @@ gulp.task('generate', ['clean'], function () {
     })
     .pipe(raster({format: 'png', scale: 1}))
     .pipe(rename({extname: '.png'}))
+    .pipe(jimp({
+        '-1': {
+            type: 'png'
+        },
+        '-2': {
+            greyscale: true,
+            type: 'png'
+        },
+        '-3': {
+            posterize: 2,
+            dither565: true,
+            background: '#ff0000',
+            type: 'png'
+        }
+    }))
     .pipe(gulp.dest('dest/'))
     .pipe(shell([
         'echo <%= file.path %>'

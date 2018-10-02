@@ -39,6 +39,7 @@
     "gm": "^1.23.1",
     "gulp": "^3.9.1",
     "gulp-clean": "^0.4.0",
+    "gulp-jimp": "^1.2.9",
     "gulp-raster": "^0.2.0",
     "gulp-rename": "^1.4.0",
     "gulp-shell": "^0.6.5",
