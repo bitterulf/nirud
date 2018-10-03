@@ -9,6 +9,7 @@ const dir = require('node-dir');
 const gm = require('gm');
 const jimp = require('gulp-jimp');
 const childProcess = require('child_process');
+const cheerio = require('cheerio');
 
 function generate(base, files) {
     const src = require('stream')
@@ -39,7 +40,7 @@ gulp.task('clean', function () {
 
 gulp.task('generate', ['clean'], function () {
     return generate('test', {
-        '1.svg': fs.readFileSync('./icon.svg').toString().split('#00ff00').join('#ff0000'),
+        '1.svg': fs.readFileSync('./icon.svg').toString().split('#00ff00').join('#ff0000').split('display:none').join(''),
         '2.svg': fs.readFileSync('./icon.svg').toString().split('#00ff00').join('#00ff00'),
         '3.svg': fs.readFileSync('./icon.svg').toString().split('#00ff00').join('#0000ff'),
         '4.svg': fs.readFileSync('./icon.svg').toString().split('#00ff00').join('#00ffff'),
