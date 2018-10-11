@@ -14,6 +14,8 @@ color = hex_to_rgb(argv[argv.index("--") + 2])
 # charMat = charObj.material_slots['Material'].material
 # charMat.diffuse_color = (color[0]/255, color[1]/255, color[2]/255)
 # charMat.specular_color = (color[0]/255, color[1]/255, color[2]/255)
+# blender --background scene.blend --python scene.py -- foo.png ff00ff
+# blender scene.blend --python import.py
 
 lamps = [obj.data for obj in bpy.context.scene.objects if obj.type == 'LAMP']
 materials = bpy.data.materials
