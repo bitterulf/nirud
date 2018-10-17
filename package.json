@@ -27,12 +27,14 @@
     "inert": "^4.2.0",
     "iron": "^5.0.4",
     "jsondiffpatch": "^0.3.11",
+    "lodash": "^4.17.11",
     "nedb": "^1.8.0",
     "primus": "^7.2.2",
     "seneca": "^3.7.0",
     "svg2png": "^4.1.1",
     "unirest": "^0.5.1",
     "vision": "^4.1.1",
+    "xml2js": "^0.4.19",
     "yar": "^8.0.0"
   },
   "devDependencies": {
