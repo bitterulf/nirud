@@ -8,5 +8,5 @@ const attributes = {
 };
 const options = {x: 0, y: 0, fontSize: 150, anchor: 'top', attributes: attributes};
 
-const svg = textToSVG.getSVG('START the GAME! - Victory is near', options);
+const svg = textToSVG.getSVG('Victory is near', options);
 fs.writeFileSync('./outputText.svg', svg);
