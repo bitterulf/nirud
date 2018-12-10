@@ -8,3 +8,5 @@
 /base*.png
 /dest/
 /*.blend1
+/Node-RED_files/
+/nr/
