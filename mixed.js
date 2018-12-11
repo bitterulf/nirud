@@ -3,18 +3,36 @@ var seneca = require('seneca')()
 var entities = require('seneca-entity')
 seneca.use(entities)
 
-seneca.add('entity:vehicle,cmd:list,system:*', (msg, reply) => {
-    reply(null, {result: []});
+seneca.add('cmd:log,system:*,text:*', (msg, reply) => {
+    seneca.log.info('logging', msg.text);
+    reply(null, {});
 });
 
-seneca.add('entity:vehicle,cmd:list,system:test', (msg, reply) => {
-    const vehicle = seneca.make('vehicle');
-    vehicle.list$( {}, function(err,list){
-        reply(null, {
-            result: list.map(function(entry) {
-                entry.system = msg.system;
-                return entry;
-            })
+seneca.add('entity:vehicle,cmd:list,system:*', function (msg, reply) {
+    reply(null, {result: [
+        {
+            name: 'default vehicle',
+            system: msg.system
+        }
+    ]});
+});
+
+seneca.add('entity:vehicle,cmd:list,system:*', function (msg, reply) {
+    this.prior(msg, reply);
+    this.act('cmd:log', {system: msg.system, text: 'vehicle list was called'});
+});
+
+seneca.add('entity:vehicle,cmd:list,system:test', function(msg, reply) {
+    this.prior(msg, function (err, out) {
+
+        const vehicle = seneca.make('vehicle');
+        vehicle.list$( {}, function(err,list){
+            reply(null, {
+                result: (list.map(function(entry) {
+                    entry.system = msg.system;
+                    return entry;
+                })).concat(out.result)
+            });
         });
     });
 });
