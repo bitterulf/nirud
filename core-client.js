@@ -27,3 +27,17 @@ bonjour.find({ type: 'httpIn' }, function (service) {
     }, 2000);
 
 });
+
+bonjour.find({ type: 'logOut' }, function (service) {
+    console.log('Found an log OUT HTTP server:', service);
+    console.log(service.rawTxt.toString());
+    const consumer = zmq.socket('sub');
+
+    consumer.connect('tcp://127.0.0.1:'+service.port);
+    consumer.subscribe('info');
+    console.log('consumer connected to port '+service.port);
+
+    consumer.on('message', function(topic, message){
+        console.log('log: %s', message);
+    });
+});

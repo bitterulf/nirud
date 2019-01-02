@@ -7,16 +7,23 @@ bonjour.find({ type: 'responseIn' }, function (service) {
     const producer = zmq.socket('push');
     producer.connect('tcp://127.0.0.1:'+service.port);
 
-    bonjour.find({ type: 'httpOut' }, function (service) {
-        console.log('Found an HTTP server:', service);
-        console.log(service.rawTxt.toString());
-        const consumer = zmq.socket('pull');
+    bonjour.find({ type: 'logIn' }, function (service) {
+        console.log('Found an logger:', service);
+        const logger = zmq.socket('push');
+        logger.connect('tcp://127.0.0.1:'+service.port);
 
-        consumer.connect('tcp://127.0.0.1:'+service.port);
-        console.log('consumer connected to port '+service.port);
+        bonjour.find({ type: 'httpOut' }, function (service) {
+            console.log('Found an HTTP server:', service);
+            console.log(service.rawTxt.toString());
+            const consumer = zmq.socket('pull');
 
-        consumer.on('message', function(msg){
-            producer.send(msg.toString());
+            consumer.connect('tcp://127.0.0.1:'+service.port);
+            console.log('consumer connected to port '+service.port);
+
+            consumer.on('message', function(msg){
+                producer.send(msg.toString());
+                logger.send('yeah');
+            });
         });
     });
 });
