@@ -30,6 +30,7 @@
     "jsondiffpatch": "^0.3.11",
     "lodash": "^4.17.11",
     "nedb": "^1.8.0",
+    "portfinder": "^1.0.20",
     "potrace": "^2.1.1",
     "primus": "^7.2.2",
     "seneca": "^3.7.0",
@@ -38,7 +39,8 @@
     "unirest": "^0.5.1",
     "vision": "^4.1.1",
     "xml2js": "^0.4.19",
-    "yar": "^8.0.0"
+    "yar": "^8.0.0",
+    "zeromq": "^5.1.0"
   },
   "devDependencies": {
     "gm": "^1.23.1",
